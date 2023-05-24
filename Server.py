@@ -64,8 +64,8 @@ try:
 
     video_send_thread = threading.Thread(target=video_send_frames, args=(video_client_socket,))
     video_send_thread.start()
-    #video_rev_thread = threading.Thread(target=video_rev_frames, args=(video_client_socket,))
-    #video_rev_thread.start()
+    video_rev_thread = threading.Thread(target=video_rev_frames, args=(video_client_socket,))
+    video_rev_thread.start()
 except KeyboardInterrupt:
     print("서버 종료")
     video_server_socket.close()
