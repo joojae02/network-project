@@ -42,11 +42,8 @@ def video_rev_frames(video_client_socket):
             break
 
 
-
-video_server_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-video_host_name  = socket.gethostname()
-video_host_ip = socket.gethostbyname(video_host_name)
-print('HOST IP:',video_host_ip)
+video_client_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+video_host_ip = '172.30.1.24'
 video_port = 10050
 
 
