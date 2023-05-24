@@ -9,6 +9,7 @@ while True:
 
     # 프레임 표시
     cv2.imshow('Webcam', frame)
+    cv2.imshow('Webcam1', frame)
 
     # q를 누르면 종료
     if cv2.waitKey(1) & 0xFF == ord('q'):

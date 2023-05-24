@@ -8,7 +8,7 @@ import imutils
 def video_send_frames(video_client_socket):
     while True:
         if video_client_socket:
-            vid = cv2.VideoCapture(0)
+            vid = cv2.VideoCapture("./test_video2.mp4")
             while(vid.isOpened()):
                 img,frame = vid.read()
                 a = pickle.dumps(frame)
