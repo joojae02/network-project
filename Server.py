@@ -42,12 +42,15 @@ def video_rev_frames(video_client_socket):
             break
 
 
-video_client_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-video_host_ip = '172.30.1.24'
+
+video_server_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+video_host_name  = socket.gethostname()
+video_host_ip = socket.gethostbyname(video_host_name)
+print('HOST IP:',video_host_ip)
 video_port = 10050
 
 
-socket_address = (video_host_ip,video_port)``
+socket_address = (video_host_ip,video_port)
 print('Socket created')
 video_server_socket.bind(socket_address)
 print('Socket bind complete')
@@ -61,8 +64,8 @@ try:
 
     video_send_thread = threading.Thread(target=video_send_frames, args=(video_client_socket,))
     video_send_thread.start()
-    video_rev_thread = threading.Thread(target=video_rev_frames, args=(video_client_socket,))
-    video_rev_thread.start()
+    #video_rev_thread = threading.Thread(target=video_rev_frames, args=(video_client_socket,))
+    #video_rev_thread.start()
 except KeyboardInterrupt:
     print("서버 종료")
     video_server_socket.close()
