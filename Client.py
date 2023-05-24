@@ -19,6 +19,7 @@ def video_send_frames(video_client_socket):
                     video_client_socket.close()
                     cv2.destroyAllWindows()
                     break
+
 def video_rev_frames(video_client_socket):
     data = b""
     payload_size = struct.calcsize("Q")
@@ -42,33 +43,20 @@ def video_rev_frames(video_client_socket):
             break
 
 
-
-video_server_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-video_host_name  = socket.gethostname()
-video_host_ip = socket.gethostbyname(video_host_name)
-print('HOST IP:',video_host_ip)
+video_client_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+video_host_ip = '172.30.1.24'
 video_port = 10050
 
-
-socket_address = (video_host_ip,video_port)
-print('Socket created')
-video_server_socket.bind(socket_address)
-print('Socket bind complete')
-video_server_socket.listen(5)
-print('Socket now listening')
-
-
 try:
-    video_client_socket,video_addr = video_server_socket.accept()
-    print('Connection from:',video_addr)
-
+    video_client_socket.connect((video_host_ip,video_port)) 
+    print('서버에 연결되었습니다.')
     video_send_thread = threading.Thread(target=video_send_frames, args=(video_client_socket,))
     video_send_thread.start()
     video_rev_thread = threading.Thread(target=video_rev_frames, args=(video_client_socket,))
     video_rev_thread.start()
+
 except KeyboardInterrupt:
     print("서버 종료")
-    video_server_socket.close()
-    video_server_socket.close()
+    video_client_socket.close()
     exit()
 
