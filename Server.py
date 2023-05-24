@@ -8,7 +8,7 @@ import imutils
 def video_send_frames(video_client_socket):
     while True:
         if video_client_socket:
-            vid = cv2.VideoCapture("./test_video.mp4")
+            vid = cv2.VideoCapture(0)
             while(vid.isOpened()):
                 img,frame = vid.read()
                 a = pickle.dumps(frame)
@@ -61,12 +61,14 @@ print('Socket now listening')
 try:
     video_client_socket,video_addr = video_server_socket.accept()
     print('Connection from:',video_addr)
+
     video_send_thread = threading.Thread(target=video_send_frames, args=(video_client_socket,))
     video_send_thread.start()
     video_rev_thread = threading.Thread(target=video_rev_frames, args=(video_client_socket,))
     video_rev_thread.start()
-    
 except KeyboardInterrupt:
     print("서버 종료")
     video_server_socket.close()
+    video_server_socket.close()
     exit()
+
