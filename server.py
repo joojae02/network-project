@@ -8,13 +8,13 @@ import imutils
 def video_send_frames(video_client_socket):
     while True:
         if video_client_socket:
-            vid = cv2.VideoCapture("./test_video.mp4")
+            vid = cv2.VideoCapture(0)
             while(vid.isOpened()):
                 img,frame = vid.read()
                 a = pickle.dumps(frame)
                 message = struct.pack("Q",len(a))+a
                 video_client_socket.sendall(message)
-                cv2.imshow("Client_Client",frame)
+                cv2.imshow("Server_Client",frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     video_client_socket.close()
                     cv2.destroyAllWindows()
@@ -35,7 +35,7 @@ def video_rev_frames(video_client_socket):
         frame_data = data[:msg_size]
         data  = data[msg_size:]
         frame = pickle.loads(frame_data)
-        cv2.imshow("Client_Server",frame)
+        cv2.imshow("Server_Server",frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             video_client_socket.close()
             cv2.destroyAllWindows()
