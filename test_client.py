@@ -223,12 +223,7 @@ def run_gui():
     app = SFTPUploadGUI()
     app.mainloop()
 
-# 이벤트 루프 실행
 async def run_event_loop():
-    # SFTP 서버 스레드 시작
-    server_thread = threading.Thread(target=start_sftp_server)
-    server_thread.start()
-
     # GUI 스레드 시작
     gui_thread = threading.Thread(target=run_gui)
     gui_thread.start()
@@ -243,7 +238,6 @@ async def run_event_loop():
     # 웹소켓 서버 종료
     start_server.close()
 
-# tkinter 메인 루프 시작
 def run_tk(root, interval=0.05):  # 50 ms
     def update():
         root.update()
@@ -251,15 +245,26 @@ def run_tk(root, interval=0.05):  # 50 ms
     loop.call_soon(update)
     loop.run_forever()
 
-# 별도의 스레드에서 tkinter 이벤트 루프 시작
+# asyncio 이벤트 루프 실행
+loop = asyncio.get_event_loop()
+
+# ChatClient 실행
+chat_client = ChatClient(loop)
+loop.run_until_complete(chat_client.connect())
+loop.create_task(chat_client.receive_message())
+
+# tkinter 메인 루프 시작
 root = tk.Tk()  # 루트 윈도우 생성
 canvas = tk.Canvas(root, width=1440, height=900)  # 캔버스 생성
 canvas.pack()
 threading.Thread(target=run_tk, args=(root,), daemon=True).start()
 
-# asyncio 이벤트 루프 실행
-loop = asyncio.get_event_loop()
-loop.run_until_complete(run_event_loop())
+# 병렬로 실행
+tasks = [
+    run_event_loop(),
+    chat_client.run_tk(root)
+]
+loop.run_until_complete(asyncio.gather(*tasks))
 
 # 기본 이벤트 루프 정책 설정 (tkinter와 호환)
 # asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

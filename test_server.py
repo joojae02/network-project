@@ -226,6 +226,7 @@ class ChatServer(tk.Tk):
 
 ###############
 
+
 # GUI 실행
 def run_gui():
     server_ui = SFTPServerUI()
@@ -255,7 +256,28 @@ async def run_event_loop():
     gui_thread.join()
     start_server.close()
 
-asyncio.run(run_event_loop())
+def run_tk():
+    chat_server.update()
+    loop.call_later(0.05, run_tk)
+
+# asyncio 이벤트 루프 실행
+loop = asyncio.get_event_loop()
+
+# ChatServer 실행
+connected = set()
+chat_server = ChatServer(loop)
+loop.run_until_complete(chat_server.start_server())
+
+# 별도의 스레드에서 tkinter 이벤트 루프 시작
+root = tk.Tk()  # 루트 윈도우 생성
+threading.Thread(target=run_tk, daemon=True).start()
+
+# 병렬로 실행
+tasks = [
+    run_event_loop(),
+    loop.run_forever()
+]
+loop.run_until_complete(asyncio.gather(*tasks))
 
 # # 별도의 쓰레드에서 SFTP 서버를 시작
 # server_thread = threading.Thread(target=start_sftp_server)
