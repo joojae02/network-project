@@ -140,7 +140,7 @@ class ChatClient(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     async def connect(self):
-        self.websocket = await websockets.connect('ws://localhost:8765')
+        self.websocket = await websockets.connect('ws://127.0.1.1:8765')
 
     async def receive_message(self):
         while True:
@@ -206,7 +206,7 @@ def video_rev_frames(video_client_socket):
 
 
 # SFTP 서버 정보
-hostname = "localhost"
+hostname = "127.0.1.1"
 port = 22
 username = "username"
 password = "password"
@@ -214,9 +214,9 @@ password = "password"
 app = SFTPUploadGUI()
 app.mainloop()
 
-ADDR="ws://localhost:8765"
+ADDR="ws://127.0.1.1:8765"
 video_client_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-video_host_ip = 'localhost'
+video_host_ip = '127.0.1.1'
 video_port = 10050
 
 # 기본 이벤트 루프 정책 설정 (tkinter와 호환)

@@ -85,7 +85,7 @@ class SFTPServerUI(tk.Tk):
         self.title("SFTP Server")
 
         # 클라이언트의 SFTP 서버에 연결하여 SFTP 클라이언트 생성
-        client_hostname = "localhost"  # 클라이언트 IP 주소
+        client_hostname = "127.0.1.1"  # 클라이언트 IP 주소
         client_port = 22  # 클라이언트 포트 번호
         client_username = "username"  
         client_password = "password"  
@@ -123,7 +123,7 @@ class SFTPServerUI(tk.Tk):
 def start_sftp_server():
     # RSA 키를 생성하고 SFTP 서버를 설정
     host_key = paramiko.RSAKey.generate(2048)
-    sftpserver = paramiko.Transport(('localhost', 22))
+    sftpserver = paramiko.Transport(('127.0.1.1', 22))
     sftpserver.add_server_key(host_key)
     server = SFTPServer()
 
@@ -151,7 +151,7 @@ class ChatServer(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     async def start_server(self):
-        self.websocket = await websockets.serve(self.server, 'localhost', 8765)
+        self.websocket = await websockets.serve(self.server, '127.0.1.1', 8765)
 
     async def server(self, websocket, path):
         connected.add(websocket)
