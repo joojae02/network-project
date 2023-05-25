@@ -225,120 +225,46 @@ class ChatServer(tk.Tk):
 
 
 ###############
+def start_sftp_server():
+    # RSA 키를 생성하고 SFTP 서버를 설정
+    host_key = paramiko.RSAKey.generate(2048)
+    sftpserver = paramiko.Transport(('localhost', 22))
+    sftpserver.add_server_key(host_key)
+    server = SFTPServer()
 
+    # 서버를 시작
+    try:
+        sftpserver.start_server(server=server)
+    except Exception as e:
+        print(f"에러: {str(e)}")
 
-# GUI 실행
-def run_gui():
-    server_ui = SFTPServerUI()
-    server_ui.protocol("WM_DELETE_WINDOW", server_ui.on_closing)
-    server_ui.mainloop()
+# 웹소켓 서버를 시작하는 함수
+async def start_websocket_server():
+    start_server = await websockets.serve(handle_client, "0.0.0.0", 8765)
+    await start_server.wait_closed()
 
-# SFTP 서버 스레드 시작
+# Tkinter GUI를 실행하는 함수
+def run_tk():
+    chat_server.update()
+    root.after(50, run_tk)  # 0.05초마다 업데이트
+
+# 별도의 쓰레드에서 SFTP 서버를 시작
 server_thread = threading.Thread(target=start_sftp_server)
 server_thread.start()
 
-# 웹소켓 서버 시작
-start_server = websockets.serve(handle_client, "0.0.0.0", 8765)
-
-# 이벤트 루프 실행
-async def run_event_loop():
-    # SFTP 서버 스레드 종료를 기다림
-    server_thread.join()
-
-    # SFTP 서버 종료 후 GUI 스레드 시작
-    gui_thread = threading.Thread(target=run_gui)
-    gui_thread.start()
-
-    # 웹소켓 서버 시작
-    await start_server
-
-    # GUI 종료 후 웹소켓 서버 종료
-    gui_thread.join()
-    start_server.close()
-
-def run_tk():
-    chat_server.update()
-    loop.call_later(0.05, run_tk)
-
-# asyncio 이벤트 루프 실행
+# 이벤트 루프를 실행하고 웹소켓 서버 시작
 loop = asyncio.get_event_loop()
+websocket_task = loop.create_task(start_websocket_server())
 
-# ChatServer 실행
-connected = set()
+# Tkinter GUI를 실행
+root = Tk()
 chat_server = ChatServer(loop)
-loop.run_until_complete(chat_server.start_server())
+root.protocol("WM_DELETE_WINDOW", root.quit)
+root.after(50, run_tk)  # 0.05초마다 업데이트
+root.mainloop()
 
-# 별도의 스레드에서 tkinter 이벤트 루프 시작
-root = tk.Tk()  # 루트 윈도우 생성
-threading.Thread(target=run_tk, daemon=True).start()
-
-# 병렬로 실행
-tasks = [
-    run_event_loop(),
-    loop.run_forever()
-]
-loop.run_until_complete(asyncio.gather(*tasks))
-
-# # 별도의 쓰레드에서 SFTP 서버를 시작
-# server_thread = threading.Thread(target=start_sftp_server)
-# server_thread.start()
-
-# # 메인 쓰레드에서 GUI를 실행
-# server_ui = SFTPServerUI()
-# server_ui.protocol("WM_DELETE_WINDOW", server_ui.on_closing)
-# server_ui.mainloop()
-
-# # GUI가 종료되면 서버 쓰레드를 종료
-# server_thread.join()
-
-# # 웹소켓 서버 시작
-# start_server = websockets.serve(handle_client, "0.0.0.0", 8765)
-
-# # 이벤트 루프 실행
-# asyncio.get_event_loop().run_until_complete(start_server)
-# asyncio.get_event_loop().run_forever()
-
-
-# connected = set()
-
-# loop = asyncio.get_event_loop()
-# chat_server = ChatServer(loop)
-
-# loop.run_until_complete(chat_server.start_server())
-
-# def run_tk():
-#     chat_server.update()
-#     loop.call_later(0.05, run_tk)
-
-# run_tk()
-# loop.run_forever()
-
-
-
-# video_server_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-# video_host_name  = socket.gethostname()
-# video_host_ip = socket.gethostbyname(video_host_name)
-# print('HOST IP:',video_host_ip)
-# video_port = 10050
-
-
-# socket_address = (video_host_ip,video_port)
-# print('Socket created')
-# video_server_socket.bind(socket_address)
-# print('Socket bind complete')
-# video_server_socket.listen(5)
-# print('Socket now listening')
-
-
-# try:
-#     video_client_socket,video_addr = video_server_socket.accept()
-#     print('Connection from:',video_addr)
-#     video_send_thread = threading.Thread(target=video_send_frames, args=(video_client_socket,))
-#     video_send_thread.start()
-#     video_rev_thread = threading.Thread(target=video_rev_frames, args=(video_client_socket,))
-#     video_rev_thread.start()
-    
-# except KeyboardInterrupt:
-#     print("서버 종료")
-#     video_server_socket.close()
-#     exit()
+# GUI가 종료되면 서버 쓰레드를 종료하고 이벤트 루프를 정리
+server_thread.join()
+websocket_task.cancel()
+loop.run_until_complete(websocket_task)
+loop.close()

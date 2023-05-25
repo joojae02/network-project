@@ -211,100 +211,45 @@ port = 22
 username = "joojae"
 password = "1216"
 
-# app = SFTPUploadGUI()
-# app.mainloop()
-
 ADDR="ws://127.0.1.1:8765"
 video_client_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 video_host_ip = '127.0.1.1'
 video_port = 10050
 
-def run_gui():
-    app = SFTPUploadGUI()
-    app.mainloop()
+# 웹소켓 서버에 연결하고 메인 함수 실행
+async def run_main(root, canvas):
+    async with websockets.connect(ADDR) as websocket:
+        await main(websocket, root, canvas)
 
-async def run_event_loop():
-    # GUI 스레드 시작
-    gui_thread = threading.Thread(target=run_gui)
-    gui_thread.start()
+# 기본 이벤트 루프 정책 설정 (tkinter와 호환)
+asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    # 웹소켓 서버 시작
-    start_server = websockets.serve(handle_client, "0.0.0.0", 8765)
-    await start_server
+root = tk.Tk()  # 루트 윈도우 생성
+canvas = tk.Canvas(root, width=1440, height=900)  # 캔버스 생성
+canvas.pack()
 
-    # GUI 스레드 종료를 기다림
-    gui_thread.join()
+# SFTPUploadGUI 인스턴스 생성 및 mainloop() 호출
+app = SFTPUploadGUI()
+app.mainloop()
 
-    # 웹소켓 서버 종료
-    start_server.close()
+# 별도의 스레드에서 tkinter 이벤트 루프 실행
+def run_tk():
+    root.mainloop()
 
-def run_tk(root, interval=0.05):  # 50 ms
-    def update():
-        root.update()
-        loop.call_later(interval, update)
-    loop.call_soon(update)
-    loop.run_forever()
+tk_thread = threading.Thread(target=run_tk, daemon=True)
+tk_thread.start()
 
-# asyncio 이벤트 루프 실행
+# asyncio 이벤트 루프에서 main 함수 실행
+async def run_async():
+    await run_main(root, canvas)
+
 loop = asyncio.get_event_loop()
+loop.run_until_complete(run_async())
 
-# ChatClient 실행
 chat_client = ChatClient(loop)
 loop.run_until_complete(chat_client.connect())
 loop.create_task(chat_client.receive_message())
 
 # tkinter 메인 루프 시작
-root = tk.Tk()  # 루트 윈도우 생성
-canvas = tk.Canvas(root, width=1440, height=900)  # 캔버스 생성
-canvas.pack()
-threading.Thread(target=run_tk, args=(root,), daemon=True).start()
-
-# 병렬로 실행
-tasks = [
-    run_event_loop(),
-    chat_client.run_tk(root)
-]
-loop.run_until_complete(asyncio.gather(*tasks))
-
-# 기본 이벤트 루프 정책 설정 (tkinter와 호환)
-# asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
-# root = tk.Tk()  # 루트 윈도우 생성
-# canvas = tk.Canvas(root, width=1440, height=900)  # 캔버스 생성
-# canvas.pack()
-
-# # 별도의 스레드에서 tkinter 이벤트 루프
-# threading.Thread(target=asyncio.run, args=(run_main(root, canvas),), daemon=True).start()
-
-# # tkinter 메인 루프 시작
-# root.mainloop()
-
-# loop = asyncio.get_event_loop()
-# chat_client = ChatClient(loop)
-
-# loop.run_until_complete(chat_client.connect())
-# loop.create_task(chat_client.receive_message())
-
-# def run_tk(root, interval=0.05):  # 50 ms
-#     def update():
-#         root.update()
-#         loop.call_later(interval, update)
-#     loop.call_soon(update)
-#     loop.run_forever()
-
-# run_tk(chat_client)
-
-
-# try:
-#     video_client_socket.connect((video_host_ip,video_port)) 
-#     print('서버에 연결되었습니다.')
-#     video_send_thread = threading.Thread(target=video_send_frames, args=(video_client_socket,))
-#     video_send_thread.start()
-#     video_rev_thread = threading.Thread(target=video_rev_frames, args=(video_client_socket,))
-#     video_rev_thread.start()
-
-# except KeyboardInterrupt:
-#     print("서버 종료")
-#     video_client_socket.close()
-#     exit()
-
+loop.call_soon_threadsafe(run_tk)
+loop.run_forever()
