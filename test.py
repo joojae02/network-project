@@ -1,7 +1,7 @@
 import cv2
 
 # 웹캠 열기
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture("./test_video2.mp4")
 
 while True:
     # 비디오 프레임 읽기
@@ -9,7 +9,6 @@ while True:
 
     # 프레임 표시
     cv2.imshow('Webcam', frame)
-    cv2.imshow('Webcam1', frame)
 
     # q를 누르면 종료
     if cv2.waitKey(1) & 0xFF == ord('q'):

@@ -9,6 +9,13 @@ import paramiko
 from tkinter import filedialog
 import aiohttp
 from aiohttp import web
+import socket
+import threading
+import cv2
+import pickle
+import struct
+import imutils
+
 
 # 서버에게 스크린샷을 요청하는 함수
 async def request_screenshot(websocket):
@@ -157,8 +164,49 @@ class ChatClient(tk.Tk):
         self.destroy()
 
 
+##################################
+
+def video_send_frames(video_client_socket):
+    while True:
+        if video_client_socket:
+            vid = cv2.VideoCapture("./test_video2.mp4")
+            while(vid.isOpened()):
+                img,frame = vid.read()
+                a = pickle.dumps(frame)
+                message = struct.pack("Q",len(a))+a
+                video_client_socket.sendall(message)
+                cv2.imshow("Client_Client",frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    video_client_socket.close()
+                    cv2.destroyAllWindows()
+                    break
+
+def video_rev_frames(video_client_socket):
+    data = b""
+    payload_size = struct.calcsize("Q")
+    while True :
+        while len(data) < payload_size:
+            packet = video_client_socket.recv(4*1024)
+            if not packet: break
+            data+=packet
+        packed_msg_size = data[:payload_size]
+        data = data[payload_size:]
+        msg_size = struct.unpack("Q",packed_msg_size)[0]
+        while len(data) < msg_size:
+            data += video_client_socket.recv(4*1024)
+        frame_data = data[:msg_size]
+        data  = data[msg_size:]
+        frame = pickle.loads(frame_data)
+        cv2.imshow("Client_Server",frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            video_client_socket.close()
+            cv2.destroyAllWindows()
+            break
+##################################
+
+
 # SFTP 서버 정보
-hostname = "192.168.1.1"
+hostname = "localhost"
 port = 22
 username = "username"
 password = "password"
@@ -166,7 +214,10 @@ password = "password"
 app = SFTPUploadGUI()
 app.mainloop()
 
-ADDR="ws://192.1.1.1:8765"
+ADDR="ws://localhost:8765"
+video_client_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+video_host_ip = 'localhost'
+video_port = 10050
 
 # 기본 이벤트 루프 정책 설정 (tkinter와 호환)
 asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -176,7 +227,6 @@ canvas = tk.Canvas(root, width=1440, height=900)  # 캔버스 생성
 canvas.pack()
 
 # 별도의 스레드에서 tkinter 이벤트 루프
-import threading
 threading.Thread(target=asyncio.run, args=(run_main(root, canvas),), daemon=True).start()
 
 # tkinter 메인 루프 시작
@@ -196,3 +246,18 @@ def run_tk(root, interval=0.05):  # 50 ms
     loop.run_forever()
 
 run_tk(chat_client)
+
+
+try:
+    video_client_socket.connect((video_host_ip,video_port)) 
+    print('서버에 연결되었습니다.')
+    video_send_thread = threading.Thread(target=video_send_frames, args=(video_client_socket,))
+    video_send_thread.start()
+    video_rev_thread = threading.Thread(target=video_rev_frames, args=(video_client_socket,))
+    video_rev_thread.start()
+
+except KeyboardInterrupt:
+    print("서버 종료")
+    video_client_socket.close()
+    exit()
+

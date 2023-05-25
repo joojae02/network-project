@@ -4,6 +4,14 @@ import pyautogui
 import json
 import base64
 import io
+import paramiko
+import tkinter as tk
+import threading
+import socket
+import cv2
+import pickle
+import struct
+import imutils
 
 # 클라이언트와의 연결을 관리하는 함수
 async def handle_client(websocket, path):
@@ -77,7 +85,7 @@ class SFTPServerUI(tk.Tk):
         self.title("SFTP Server")
 
         # 클라이언트의 SFTP 서버에 연결하여 SFTP 클라이언트 생성
-        client_hostname = "192.168.0.0"  # 클라이언트 IP 주소
+        client_hostname = "localhost"  # 클라이언트 IP 주소
         client_port = 22  # 클라이언트 포트 번호
         client_username = "username"  
         client_password = "password"  
@@ -155,14 +163,6 @@ class ChatServer(tk.Tk):
                 self.chat_box.insert('end', f"Other: {message}\n")
                 self.chat_box.configure(state='disabled')
 
-                # 에코 서버 예제
-                # for conn in connected:
-                #     await conn.send(message)  # 받은 내용을 연결된 모든 클라이언트로 전송
-                #     print(f"보낸 내용: {message}")  # 보낸 내용을 출력
-                #     self.chat_box.configure(state='normal')
-                #     self.chat_box.insert('end', f"보낸 내용: {message}\n")
-                #     self.chat_box.configure(state='disabled')
-
         except websockets.exceptions.ConnectionClosed:
             pass
         finally:
@@ -184,6 +184,47 @@ class ChatServer(tk.Tk):
             self.loop.create_task(conn.close())
 
         self.destroy()  
+
+###############
+
+def video_send_frames(video_client_socket):
+    while True:
+        if video_client_socket:
+            vid = cv2.VideoCapture(0)
+            while(vid.isOpened()):
+                img,frame = vid.read()
+                a = pickle.dumps(frame)
+                message = struct.pack("Q",len(a))+a
+                video_client_socket.sendall(message)
+                cv2.imshow("Server_Client",frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    video_client_socket.close()
+                    cv2.destroyAllWindows()
+                    break
+def video_rev_frames(video_client_socket):
+    data = b""
+    payload_size = struct.calcsize("Q")
+    while True :
+        while len(data) < payload_size:
+            packet = video_client_socket.recv(4*1024)
+            if not packet: break
+            data+=packet
+        packed_msg_size = data[:payload_size]
+        data = data[payload_size:]
+        msg_size = struct.unpack("Q",packed_msg_size)[0]
+        while len(data) < msg_size:
+            data += video_client_socket.recv(4*1024)
+        frame_data = data[:msg_size]
+        data  = data[msg_size:]
+        frame = pickle.loads(frame_data)
+        cv2.imshow("Server_Server",frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            video_client_socket.close()
+            cv2.destroyAllWindows()
+            break
+
+
+###############
 
 
 # 별도의 쓰레드에서 SFTP 서버를 시작
@@ -219,3 +260,33 @@ def run_tk():
 
 run_tk()
 loop.run_forever()
+
+
+
+video_server_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+video_host_name  = socket.gethostname()
+video_host_ip = socket.gethostbyname(video_host_name)
+print('HOST IP:',video_host_ip)
+video_port = 10050
+
+
+socket_address = (video_host_ip,video_port)
+print('Socket created')
+video_server_socket.bind(socket_address)
+print('Socket bind complete')
+video_server_socket.listen(5)
+print('Socket now listening')
+
+
+try:
+    video_client_socket,video_addr = video_server_socket.accept()
+    print('Connection from:',video_addr)
+    video_send_thread = threading.Thread(target=video_send_frames, args=(video_client_socket,))
+    video_send_thread.start()
+    video_rev_thread = threading.Thread(target=video_rev_frames, args=(video_client_socket,))
+    video_rev_thread.start()
+    
+except KeyboardInterrupt:
+    print("서버 종료")
+    video_server_socket.close()
+    exit()
