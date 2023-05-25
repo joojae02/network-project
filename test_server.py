@@ -87,8 +87,8 @@ class SFTPServerUI(tk.Tk):
         # 클라이언트의 SFTP 서버에 연결하여 SFTP 클라이언트 생성
         client_hostname = "127.0.1.1"  # 클라이언트 IP 주소
         client_port = 22  # 클라이언트 포트 번호
-        client_username = "username"  
-        client_password = "password"  
+        client_username = "joojae"  
+        client_password = "1216"  
 
         # 클라이언트 호스트와 포트로 트랜스포트 객체 생성 및 연결
         self.client_transport = paramiko.Transport((client_hostname, client_port))
@@ -226,40 +226,70 @@ class ChatServer(tk.Tk):
 
 ###############
 
+# GUI 실행
+def run_gui():
+    server_ui = SFTPServerUI()
+    server_ui.protocol("WM_DELETE_WINDOW", server_ui.on_closing)
+    server_ui.mainloop()
 
-# 별도의 쓰레드에서 SFTP 서버를 시작
+# SFTP 서버 스레드 시작
 server_thread = threading.Thread(target=start_sftp_server)
 server_thread.start()
-
-# 메인 쓰레드에서 GUI를 실행
-server_ui = SFTPServerUI()
-server_ui.protocol("WM_DELETE_WINDOW", server_ui.on_closing)
-server_ui.mainloop()
-
-# GUI가 종료되면 서버 쓰레드를 종료
-server_thread.join()
 
 # 웹소켓 서버 시작
 start_server = websockets.serve(handle_client, "0.0.0.0", 8765)
 
 # 이벤트 루프 실행
-asyncio.get_event_loop().run_until_complete(start_server)
-asyncio.get_event_loop().run_forever()
+async def run_event_loop():
+    # SFTP 서버 스레드 종료를 기다림
+    server_thread.join()
+
+    # SFTP 서버 종료 후 GUI 스레드 시작
+    gui_thread = threading.Thread(target=run_gui)
+    gui_thread.start()
+
+    # 웹소켓 서버 시작
+    await start_server
+
+    # GUI 종료 후 웹소켓 서버 종료
+    gui_thread.join()
+    start_server.close()
+
+asyncio.run(run_event_loop())
+
+# # 별도의 쓰레드에서 SFTP 서버를 시작
+# server_thread = threading.Thread(target=start_sftp_server)
+# server_thread.start()
+
+# # 메인 쓰레드에서 GUI를 실행
+# server_ui = SFTPServerUI()
+# server_ui.protocol("WM_DELETE_WINDOW", server_ui.on_closing)
+# server_ui.mainloop()
+
+# # GUI가 종료되면 서버 쓰레드를 종료
+# server_thread.join()
+
+# # 웹소켓 서버 시작
+# start_server = websockets.serve(handle_client, "0.0.0.0", 8765)
+
+# # 이벤트 루프 실행
+# asyncio.get_event_loop().run_until_complete(start_server)
+# asyncio.get_event_loop().run_forever()
 
 
-connected = set()
+# connected = set()
 
-loop = asyncio.get_event_loop()
-chat_server = ChatServer(loop)
+# loop = asyncio.get_event_loop()
+# chat_server = ChatServer(loop)
 
-loop.run_until_complete(chat_server.start_server())
+# loop.run_until_complete(chat_server.start_server())
 
-def run_tk():
-    chat_server.update()
-    loop.call_later(0.05, run_tk)
+# def run_tk():
+#     chat_server.update()
+#     loop.call_later(0.05, run_tk)
 
-run_tk()
-loop.run_forever()
+# run_tk()
+# loop.run_forever()
 
 
 
