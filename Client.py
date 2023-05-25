@@ -44,7 +44,7 @@ def video_rev_frames(video_client_socket):
 
 
 video_client_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-video_host_ip = 'localhost'
+video_host_ip = '127.0.1.1'
 video_port = 10050
 
 try:
