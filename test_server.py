@@ -229,6 +229,10 @@ def run_tk():
 server_thread = threading.Thread(target=start_sftp_server)
 server_thread.start()
 
+server_ui = SFTPServerUI()
+server_ui.protocol("WM_DELETE_WINDOW", server_ui.on_closing)
+server_ui.mainloop()
+
 
 video_server_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 video_host_name  = socket.gethostname()
@@ -265,6 +269,8 @@ root.mainloop()
 server_thread.join()
 websocket_task.cancel()
 loop.run_until_complete(websocket_task)
+server_thread.join()
+
 loop.close()
 
 # 비디오 
