@@ -12,7 +12,6 @@ import cv2
 import pickle
 import struct
 import imutils
-from multiprocessing import Process
 
 # 클라이언트와의 연결을 관리하는 함수
 async def handle_client(websocket, path):
@@ -86,10 +85,10 @@ class SFTPServerUI(tk.Tk):
         self.title("SFTP Server")
 
         # 클라이언트의 SFTP 서버에 연결하여 SFTP 클라이언트 생성
-        client_hostname = "127.0.1.1"  # 클라이언트 IP 주소
+        client_hostname = "192.168.0.12"  # 클라이언트 IP 주소
         client_port = 22  # 클라이언트 포트 번호
-        client_username = "joojae"  
-        client_password = "1216"  
+        client_username = "ssu20182601"  
+        client_password = "c!1111"  
 
         # 클라이언트 호스트와 포트로 트랜스포트 객체 생성 및 연결
         self.client_transport = paramiko.Transport((client_hostname, client_port))
@@ -124,7 +123,7 @@ class SFTPServerUI(tk.Tk):
 def start_sftp_server():
     # RSA 키를 생성하고 SFTP 서버를 설정
     host_key = paramiko.RSAKey.generate(2048)
-    sftpserver = paramiko.Transport(('127.0.1.1', 22))
+    sftpserver = paramiko.Transport(('localhost', 22))
     sftpserver.add_server_key(host_key)
     server = SFTPServer()
 
@@ -184,108 +183,93 @@ class ChatServer(tk.Tk):
         for conn in connected:
             self.loop.create_task(conn.close())
 
-        self.destroy()  
+        self.loop.stop()  # 이벤트 루프를 종료
+        self.destroy()
 
-def video_send_frames(video_client_socket):
-    while True:
-        if video_client_socket:
-            vid = cv2.VideoCapture('./test_video3.mp4')
-            while(vid.isOpened()):
-                img,frame = vid.read()
-                a = pickle.dumps(frame)
-                message = struct.pack("Q",len(a))+a
-                video_client_socket.sendall(message)
-                cv2.imshow("Server_Client",frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    video_client_socket.close()
-                    cv2.destroyAllWindows()
-                    break
+###############
 
+# def video_send_frames(video_client_socket):
+#     while True:
+#         if video_client_socket:
+#             vid = cv2.VideoCapture(0)
+#             while(vid.isOpened()):
+#                 img,frame = vid.read()
+#                 a = pickle.dumps(frame)
+#                 message = struct.pack("Q",len(a))+a
+#                 video_client_socket.sendall(message)
+#                 cv2.imshow("Server_Client",frame)
+#                 if cv2.waitKey(1) & 0xFF == ord('q'):
+#                     video_client_socket.close()
+#                     cv2.destroyAllWindows()
+#                     break
+# def video_rev_frames(video_client_socket):
+#     data = b""
+#     payload_size = struct.calcsize("Q")
+#     while True :
+#         while len(data) < payload_size:
+#             packet = video_client_socket.recv(4*1024)
+#             if not packet: break
+#             data+=packet
+#         packed_msg_size = data[:payload_size]
+#         data = data[payload_size:]
+#         msg_size = struct.unpack("Q",packed_msg_size)[0]
+#         while len(data) < msg_size:
+#             data += video_client_socket.recv(4*1024)
+#         frame_data = data[:msg_size]
+#         data  = data[msg_size:]
+#         frame = pickle.loads(frame_data)
+#         cv2.imshow("Server_Server",frame)
+#         if cv2.waitKey(1) & 0xFF == ord('q'):
+#             video_client_socket.close()
+#             cv2.destroyAllWindows()
+#             break
 
+# Start the asyncio event loop in a new thread
+def start_loop(loop):
+    asyncio.set_event_loop(loop)
+    loop.run_forever()
 
-############################
 # 웹소켓 서버를 시작하는 함수
+async def start_websocket_server():
+    print("Starting the websocket server")
+    start_server = await websockets.serve(handle_client, "0.0.0.0", 8765)
+    print("Websocket server is running")
+    await start_server.wait_closed()
 
-# start_server = websockets.serve(handle_client, "0.0.0.0", 8765)
-
-# loop = asyncio.new_event_loop()
-# loop.create_task(start_server)
-
-############################
-
-def start_sftp_server():
-    # RSA 키를 생성하고 SFTP 서버를 설정
-    host_key = paramiko.RSAKey.generate(2048)
-    sftpserver = paramiko.Transport(('localhost', 22))
-    sftpserver.add_server_key(host_key)
-    server = SFTPServer()
-
-    # 서버를 시작
-    try:
-        sftpserver.start_server(server=server)
-    except Exception as e:
-        print(f"에러: {str(e)}")
-
-def run_gui():
-    # 메인 쓰레드에서 GUI를 실행
-    server_ui = SFTPServerUI()
-    server_ui.protocol("WM_DELETE_WINDOW", server_ui.on_closing)
-    server_ui.mainloop()
+# Tkinter GUI를 실행하는 함수
+def run_tk(root, app):
+    app.update()
+    root.after(100, run_tk, root, app)
 
 # 별도의 쓰레드에서 SFTP 서버를 시작
 server_thread = threading.Thread(target=start_sftp_server)
 server_thread.start()
 
-# GUI를 별도의 쓰레드에서 실행
-gui_thread = threading.Thread(target=run_gui)
-gui_thread.start()
 
 
+if __name__ == "__main__":
+    new_loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(new_loop)
+    new_loop.run_until_complete(start_websocket_server())
+    new_loop.run_forever()
 
-############################
-# video
-video_server_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-video_host_name  = socket.gethostname()
-video_host_ip = socket.gethostbyname(video_host_name)
-print('HOST IP:',video_host_ip)
-video_port = 10050
-
-
-socket_address = (video_host_ip,video_port)
-print('Socket created')
-video_server_socket.bind(socket_address)
-print('Socket bind complete')
-video_server_socket.listen(5)
-print('Socket now listening')
-
-
-video_client_socket,video_addr = video_server_socket.accept()
-print('Connection from:',video_addr)
-video_send_thread = threading.Thread(target=video_send_frames, args=(video_client_socket,))
-video_send_thread.start()
-############################
-
-############################
-# chat
-# connected = set()
-
-# chat_server = ChatServer(loop)
-# async def start_server():
-#     await chat_server.start_server()
-#     # 특정 작업이 완료되면 이벤트 루프를 종료하도록 설정
-
-# def run_tk():
-#     chat_server.update()
-#     loop.call_later(0.05, run_tk)
-
-# async def tk_main():
-#     await start_server()
-#     run_tk()
-# loop.create_task(start_server)
-
-#############################
-
-# 두 쓰레드가 종료될 때까지 기다림
-server_thread.join()
-gui_thread.join()
-video_send_thread.join()
+    # Create a new event loop
+    new_loop = asyncio.new_event_loop()
+    
+    # 스레드를 생성하고, 그 스레드에서 이벤트 루프를 실행
+    t = threading.Thread(target=start_loop, args=(new_loop,))
+    t.start()
+    
+    # 웹소켓 서버 시작
+    websocket_task = new_loop.create_task(start_websocket_server())
+    
+    # Tkinter GUI를 실행
+    root = tk.Tk()
+    app = ChatServer(new_loop)
+    root.after(100, run_tk, root, app)  # 0.1초마다 업데이트
+    root.mainloop()
+    
+    # GUI가 종료되면 서버 쓰레드를 종료하고 이벤트 루프를 정리
+    server_thread.join()
+    new_loop.call_soon_threadsafe(new_loop.stop)
+    t.join()

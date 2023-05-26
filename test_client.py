@@ -200,28 +200,37 @@ video_host_ip = '127.0.1.1'
 video_port = 10050
 
 ##################################################
-#chat
-loop = asyncio.get_event_loop()
-chat_client = ChatClient(loop)
-loop.run_until_complete(chat_client.connect())
-loop.create_task(chat_client.receive_message())
+# chat
 
-def run_tk(chat_client, interval=0.05):  # 50 ms
-    def update():
-        chat_client.update()
-        loop.call_later(interval, update)
-    loop.call_soon(update)
-    loop.run_until_complete(chat_client.keep_running())
+# loop = asyncio.get_event_loop()
+# chat_client = ChatClient(loop)
 
-run_tk(chat_client)
+# async def start_server():
+#     await chat_client.connect()
+
+
+# loop.create_task(chat_client.receive_message())
+
+# def run_tk(chat_client, interval=0.05):  # 50 ms
+#     def update():
+#         chat_client.update()
+#         loop.call_later(interval, update)
+#     loop.call_soon(update)
+#     loop.run_until_complete(chat_client.keep_running())
+
+# run_tk(chat_client)
+
 ##################################################
 # SFTP
-app = SFTPUploadGUI()
-def app_mainloop :
+def run_gui():
+    app = SFTPUploadGUI()
     app.mainloop()
 
-app_process = Process(target=app_mainloop)
-app_process.start()
+gui_thread = threading.Thread(target=run_gui)
+gui_thread.start()
+
+# GUI 쓰레드가 종료될 때까지 기다림
+gui_thread.join()
 ##################################################
 # 웹소켓 서버에 연결하고 메인 함수 실행
 # root = tk.Tk()  # 루트 윈도우 생성
