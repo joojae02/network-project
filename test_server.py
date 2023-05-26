@@ -231,7 +231,9 @@ server_thread.start()
 
 server_ui = SFTPServerUI()
 server_ui.protocol("WM_DELETE_WINDOW", server_ui.on_closing)
-ui_thread = threading.Thread(target=server_ui.mainloop)
+def ui_mainloop() :
+    server_ui.mainloop()
+ui_thread = threading.Thread(target=ui_mainloop)
 ui_thread.start()
 
 video_server_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -263,7 +265,9 @@ root = tk.Tk()
 chat_server = ChatServer(loop)
 root.protocol("WM_DELETE_WINDOW", root.quit)
 root.after(50, run_tk)  # 0.05초마다 업데이트
-root_thread = threading.Thread(target=root.mainloop)
+def root_mainloop():
+    root.mainloop()
+root_thread = threading.Thread(target=root_mainloop)
 root_thread.start()
 # GUI가 종료되면 서버 쓰레드를 종료하고 이벤트 루프를 정리
 

@@ -216,7 +216,10 @@ def run_tk(chat_client, interval=0.05):  # 50 ms
 run_tk(chat_client)
 
 app = SFTPUploadGUI()
-app_thread = threading.Thread(target=app.mainloop)
+def app_mainloop :
+    app.mainloop()
+
+app_thread = threading.Thread(target=app_mainloop)
 app_thread.start()
 
 
@@ -233,7 +236,9 @@ async def run_main(root, canvas):
 threading.Thread(target=asyncio.run, args=(run_main(root, canvas),), daemon=True).start()
 
 # tkinter 메인 루프 시작
-    root_thread = threading.Thread(target=root.mainloop)
+def root_mainloop :
+    root.mainloop()
+root_thread = threading.Thread(target=root_mainloop)
 root_thread.start()
 
 # 비디오전송
