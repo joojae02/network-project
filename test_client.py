@@ -186,6 +186,10 @@ def video_rev_frames(video_client_socket):
             cv2.destroyAllWindows()
             break
 
+async def run_main(root, canvas):
+    async with websockets.connect(ADDR) as websocket:
+        await main(websocket, root, canvas)
+        
 # SFTP 서버 정보
 hostname = "127.0.1.1"
 port = 22
@@ -208,7 +212,7 @@ def run_tk(chat_client, interval=0.05):  # 50 ms
         chat_client.update()
         loop.call_later(interval, update)
     loop.call_soon(update)
-        loop.run_forever()
+    loop.run_until_complete(chat_client.keep_running())
 
 run_tk(chat_client)
 
