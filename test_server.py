@@ -217,7 +217,8 @@ async def run_event_loop():
     asyncio.get_event_loop().run_forever()
 
 # 메인 스레드에서 이벤트 루프 실행
-asyncio.run(run_event_loop())
+loop = asyncio.get_event_loop()
+loop.run_until_complete(run_event_loop())
 
 ############################
 # 별도의 쓰레드에서 SFTP 서버를 시작
