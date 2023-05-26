@@ -219,8 +219,8 @@ app = SFTPUploadGUI()
 def app_mainloop :
     app.mainloop()
 
-app_thread = threading.Thread(target=app_mainloop)
-app_thread.start()
+app_process = Process(target=app_mainloop)
+app_process.start()
 
 
 root = tk.Tk()  # 루트 윈도우 생성
@@ -238,8 +238,8 @@ threading.Thread(target=asyncio.run, args=(run_main(root, canvas),), daemon=True
 # tkinter 메인 루프 시작
 def root_mainloop :
     root.mainloop()
-root_thread = threading.Thread(target=root_mainloop)
-root_thread.start()
+root_process = Process(target=root_mainloop)
+root_process.start()
 
 # 비디오전송
 

@@ -12,6 +12,7 @@ import cv2
 import pickle
 import struct
 import imutils
+from multiprocessing import Process
 
 # 클라이언트와의 연결을 관리하는 함수
 async def handle_client(websocket, path):
@@ -233,8 +234,8 @@ server_ui = SFTPServerUI()
 server_ui.protocol("WM_DELETE_WINDOW", server_ui.on_closing)
 def ui_mainloop() :
     server_ui.mainloop()
-ui_thread = threading.Thread(target=ui_mainloop)
-ui_thread.start()
+ui_process= Process(target=ui_mainloop)
+ui_process.start()
 
 video_server_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 video_host_name  = socket.gethostname()
@@ -267,8 +268,8 @@ root.protocol("WM_DELETE_WINDOW", root.quit)
 root.after(50, run_tk)  # 0.05초마다 업데이트
 def root_mainloop():
     root.mainloop()
-root_thread = threading.Thread(target=root_mainloop)
-root_thread.start()
+root_process = Process(target=root_mainloop)
+root_process.start()
 # GUI가 종료되면 서버 쓰레드를 종료하고 이벤트 루프를 정리
 
 
