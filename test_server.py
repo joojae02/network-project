@@ -207,18 +207,18 @@ def video_send_frames(video_client_socket):
 ############################
 # 웹소켓 서버를 시작하는 함수
 
-async def start_websocket_server():
-    start_server = websockets.serve(handle_client, "0.0.0.0", 8765)
-    await start_server
+# async def start_websocket_server():
+#     start_server = websockets.serve(handle_client, "0.0.0.0", 8765)
+#     await start_server
 
-# 이벤트 루프 실행
-async def run_event_loop():
-    await start_websocket_server()
-    asyncio.get_event_loop().run_forever()
+# # 이벤트 루프 실행
+# async def run_event_loop():
+#     await start_websocket_server()
+#     asyncio.get_event_loop().run_forever()
 
-# 메인 스레드에서 이벤트 루프 실행
-loop = asyncio.get_event_loop()
-loop.run_until_complete(run_event_loop())
+# # 메인 스레드에서 이벤트 루프 실행
+# loop = asyncio.get_event_loop()
+# loop.run_until_complete(run_event_loop())
 
 ############################
 # 별도의 쓰레드에서 SFTP 서버를 시작

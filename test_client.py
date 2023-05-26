@@ -186,9 +186,7 @@ def video_rev_frames(video_client_socket):
             cv2.destroyAllWindows()
             break
 
-async def run_main(root, canvas):
-    async with websockets.connect(ADDR) as websocket:
-        await main(websocket, root, canvas)
+
 
 # SFTP 서버 정보
 hostname = "127.0.1.1"
@@ -201,6 +199,8 @@ video_client_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 video_host_ip = '127.0.1.1'
 video_port = 10050
 
+##################################################
+#chat
 loop = asyncio.get_event_loop()
 chat_client = ChatClient(loop)
 loop.run_until_complete(chat_client.connect())
@@ -214,32 +214,33 @@ def run_tk(chat_client, interval=0.05):  # 50 ms
     loop.run_until_complete(chat_client.keep_running())
 
 run_tk(chat_client)
-
+##################################################
+# SFTP
 app = SFTPUploadGUI()
 def app_mainloop :
     app.mainloop()
 
 app_process = Process(target=app_mainloop)
 app_process.start()
-
-
-root = tk.Tk()  # 루트 윈도우 생성
-canvas = tk.Canvas(root, width=1440, height=900)  # 캔버스 생성
-canvas.pack()
-
+##################################################
 # 웹소켓 서버에 연결하고 메인 함수 실행
-async def run_main(root, canvas):
-    async with websockets.connect(ADDR) as websocket:
-        await main(websocket, root, canvas)
+# root = tk.Tk()  # 루트 윈도우 생성
+# canvas = tk.Canvas(root, width=1440, height=900)  # 캔버스 생성
+# canvas.pack()
+# # tkinter 메인 루프 시작
+# def root_mainloop :
+#     root.mainloop()
+# root_process = Process(target=root_mainloop)
+# root_process.start()
 
-# 별도의 스레드에서 tkinter 이벤트 루프
-threading.Thread(target=asyncio.run, args=(run_main(root, canvas),), daemon=True).start()
+# async def run_main(root, canvas):
+#     async with websockets.connect(ADDR) as websocket:
+#         await main(websocket, root, canvas)
+    
+# # 별도의 스레드에서 tkinter 이벤트 루프
+# threading.Thread(target=asyncio.run, args=(run_main(root, canvas),), daemon=True).start()
 
-# tkinter 메인 루프 시작
-def root_mainloop :
-    root.mainloop()
-root_process = Process(target=root_mainloop)
-root_process.start()
+##################################################
 
 # 비디오전송
 
