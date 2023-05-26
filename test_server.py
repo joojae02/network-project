@@ -124,7 +124,7 @@ class SFTPServerUI(tk.Tk):
 def start_sftp_server():
     # RSA 키를 생성하고 SFTP 서버를 설정
     host_key = paramiko.RSAKey.generate(2048)
-    sftpserver = paramiko.Transport(('localhost', 22))
+    sftpserver = paramiko.Transport(('127.0.1.1', 22))
     sftpserver.add_server_key(host_key)
     server = SFTPServer()
 
@@ -206,7 +206,7 @@ def video_send_frames(video_client_socket):
 def start_sftp_server():
     # RSA 키를 생성하고 SFTP 서버를 설정
     host_key = paramiko.RSAKey.generate(2048)
-    sftpserver = paramiko.Transport(('localhost', 22))
+    sftpserver = paramiko.Transport(('127.0.1.1', 22))
     sftpserver.add_server_key(host_key)
     server = SFTPServer()
 
