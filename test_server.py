@@ -189,7 +189,7 @@ class ChatServer(tk.Tk):
 def video_send_frames(video_client_socket):
     while True:
         if video_client_socket:
-            vid = cv2.VideoCapture(0)
+            vid = cv2.VideoCapture('./test_video3.mp4')
             while(vid.isOpened()):
                 img,frame = vid.read()
                 a = pickle.dumps(frame)
@@ -200,28 +200,7 @@ def video_send_frames(video_client_socket):
                     video_client_socket.close()
                     cv2.destroyAllWindows()
                     break
-# def video_rev_frames(video_client_socket):
-#     data = b""
-#     payload_size = struct.calcsize("Q")
-#     while True :
-#         while len(data) < payload_size:
-#             packet = video_client_socket.recv(4*1024)
-#             if not packet: break
-#             data+=packet
-#         packed_msg_size = data[:payload_size]
-#         data = data[payload_size:]
-#         msg_size = struct.unpack("Q",packed_msg_size)[0]
-#         while len(data) < msg_size:
-#             data += video_client_socket.recv(4*1024)
-#         frame_data = data[:msg_size]
-#         data  = data[msg_size:]
-#         frame = pickle.loads(frame_data)
-#         cv2.imshow("Server_Server",frame)
-#         if cv2.waitKey(1) & 0xFF == ord('q'):
-#             video_client_socket.close()
-#             cv2.destroyAllWindows()
-#             break
-###############
+
 
 def start_sftp_server():
     # RSA 키를 생성하고 SFTP 서버를 설정
@@ -250,24 +229,6 @@ def run_tk():
 server_thread = threading.Thread(target=start_sftp_server)
 server_thread.start()
 
-# 이벤트 루프를 실행하고 웹소켓 서버 시작
-loop = asyncio.get_event_loop()
-websocket_task = loop.create_task(start_websocket_server())
-
-# Tkinter GUI를 실행
-root = tk.Tk()
-chat_server = ChatServer(loop)
-root.protocol("WM_DELETE_WINDOW", root.quit)
-root.after(50, run_tk)  # 0.05초마다 업데이트
-root.mainloop()
-
-# GUI가 종료되면 서버 쓰레드를 종료하고 이벤트 루프를 정리
-server_thread.join()
-websocket_task.cancel()
-loop.run_until_complete(websocket_task)
-loop.close()
-
-# 비디오 
 
 video_server_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 video_host_name  = socket.gethostname()
@@ -288,5 +249,23 @@ video_client_socket,video_addr = video_server_socket.accept()
 print('Connection from:',video_addr)
 video_send_thread = threading.Thread(target=video_send_frames, args=(video_client_socket,))
 video_send_thread.start()
-# video_rev_thread = threading.Thread(target=video_rev_frames, args=(video_client_socket, ))
-# video_rev_thread.start()
+
+# 이벤트 루프를 실행하고 웹소켓 서버 시작
+loop = asyncio.get_event_loop()
+websocket_task = loop.create_task(start_websocket_server())
+
+# Tkinter GUI를 실행
+root = tk.Tk()
+chat_server = ChatServer(loop)
+root.protocol("WM_DELETE_WINDOW", root.quit)
+root.after(50, run_tk)  # 0.05초마다 업데이트
+root.mainloop()
+
+# GUI가 종료되면 서버 쓰레드를 종료하고 이벤트 루프를 정리
+server_thread.join()
+websocket_task.cancel()
+loop.run_until_complete(websocket_task)
+loop.close()
+
+# 비디오 
+

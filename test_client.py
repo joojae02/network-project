@@ -164,23 +164,6 @@ class ChatClient(tk.Tk):
         self.destroy()
 
 
-##################################
-
-# def video_send_frames(video_client_socket):
-#     while True:
-#         if video_client_socket:
-#             vid = cv2.VideoCapture("./test_video2.mp4")
-#             while(vid.isOpened()):
-#                 img,frame = vid.read()
-#                 a = pickle.dumps(frame)
-#                 message = struct.pack("Q",len(a))+a
-#                 video_client_socket.sendall(message)
-#                 cv2.imshow("Client_Client",frame)
-#                 if cv2.waitKey(1) & 0xFF == ord('q'):
-#                     video_client_socket.close()
-#                     cv2.destroyAllWindows()
-#                     break
-
 def video_rev_frames(video_client_socket):
     data = b""
     payload_size = struct.calcsize("Q")
@@ -202,8 +185,6 @@ def video_rev_frames(video_client_socket):
             video_client_socket.close()
             cv2.destroyAllWindows()
             break
-##################################
-
 
 # SFTP 서버 정보
 hostname = "127.0.1.1"
@@ -252,15 +233,9 @@ root.mainloop()
 
 # 비디오전송
 
-video_client_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-video_host_ip = '127.0.1.1'
-video_port = 10050
-
-
 video_client_socket.connect((video_host_ip,video_port)) 
 print('서버에 연결되었습니다.')
-# video_send_thread = threading.Thread(target=video_send_frames, args=(video_client_socket,))
-# video_send_thread.start()
+
 video_rev_thread = threading.Thread(target=video_rev_frames, args=(video_client_socket, ))
 video_rev_thread.start()
 
