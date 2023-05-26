@@ -189,7 +189,7 @@ def video_rev_frames(video_client_socket):
 async def run_main(root, canvas):
     async with websockets.connect(ADDR) as websocket:
         await main(websocket, root, canvas)
-        
+
 # SFTP 서버 정보
 hostname = "127.0.1.1"
 port = 22
@@ -203,7 +203,6 @@ video_port = 10050
 
 loop = asyncio.get_event_loop()
 chat_client = ChatClient(loop)
-
 loop.run_until_complete(chat_client.connect())
 loop.create_task(chat_client.receive_message())
 
@@ -217,7 +216,9 @@ def run_tk(chat_client, interval=0.05):  # 50 ms
 run_tk(chat_client)
 
 app = SFTPUploadGUI()
-app.mainloop()
+app_thread = threading.Thread(target=app.mainloop)
+app_thread.start()
+
 
 root = tk.Tk()  # 루트 윈도우 생성
 canvas = tk.Canvas(root, width=1440, height=900)  # 캔버스 생성
@@ -232,8 +233,8 @@ async def run_main(root, canvas):
 threading.Thread(target=asyncio.run, args=(run_main(root, canvas),), daemon=True).start()
 
 # tkinter 메인 루프 시작
-root.mainloop()
-
+    root_thread = threading.Thread(target=root.mainloop)
+root_thread.start()
 
 # 비디오전송
 
