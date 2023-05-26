@@ -203,6 +203,24 @@ def video_send_frames(video_client_socket):
                     break
 
 
+
+############################
+# 웹소켓 서버를 시작하는 함수
+
+async def start_websocket_server():
+    start_server = websockets.serve(handle_client, "0.0.0.0", 8765)
+    await start_server
+
+# 이벤트 루프 실행
+async def run_event_loop():
+    await start_websocket_server()
+    asyncio.get_event_loop().run_forever()
+
+# 메인 스레드에서 이벤트 루프 실행
+asyncio.run(run_event_loop())
+
+############################
+# 별도의 쓰레드에서 SFTP 서버를 시작
 def start_sftp_server():
     # RSA 키를 생성하고 SFTP 서버를 설정
     host_key = paramiko.RSAKey.generate(2048)
@@ -216,17 +234,6 @@ def start_sftp_server():
     except Exception as e:
         print(f"에러: {str(e)}")
 
-# 웹소켓 서버를 시작하는 함수
-async def start_websocket_server():
-    start_server = await websockets.serve(handle_client, "0.0.0.0", 8765)
-    await start_server.wait_closed()
-
-# Tkinter GUI를 실행하는 함수
-def run_tk():
-    chat_server.update()
-    root.after(50, run_tk)  # 0.05초마다 업데이트
-
-# 별도의 쓰레드에서 SFTP 서버를 시작
 server_thread = threading.Thread(target=start_sftp_server)
 server_thread.start()
 
@@ -237,6 +244,8 @@ def ui_mainloop() :
 ui_process= Process(target=ui_mainloop)
 ui_process.start()
 
+############################
+# video
 video_server_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 video_host_name  = socket.gethostname()
 video_host_ip = socket.gethostbyname(video_host_name)
@@ -256,21 +265,28 @@ video_client_socket,video_addr = video_server_socket.accept()
 print('Connection from:',video_addr)
 video_send_thread = threading.Thread(target=video_send_frames, args=(video_client_socket,))
 video_send_thread.start()
+############################
 
-# 이벤트 루프를 실행하고 웹소켓 서버 시작
+############################
+# chat
+connected = set()
 loop = asyncio.get_event_loop()
-websocket_task = loop.create_task(start_websocket_server())
-
-# Tkinter GUI를 실행
-root = tk.Tk()
 chat_server = ChatServer(loop)
-root.protocol("WM_DELETE_WINDOW", root.quit)
-root.after(50, run_tk)  # 0.05초마다 업데이트
-def root_mainloop():
-    root.mainloop()
-root_process = Process(target=root_mainloop)
-root_process.start()
-# GUI가 종료되면 서버 쓰레드를 종료하고 이벤트 루프를 정리
+async def start_server():
+    await chat_server.start_server()
+    # 특정 작업이 완료되면 이벤트 루프를 종료하도록 설정
+
+def run_tk():
+    chat_server.update()
+    loop.call_later(0.05, run_tk)
+
+async def tk_main():
+    await start_server()
+    run_tk()
+loop.run_until_complete(main())
+
+#############################
+
 
 
 loop.run_until_complete(websocket_task)
