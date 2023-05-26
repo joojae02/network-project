@@ -230,7 +230,6 @@ gui_thread = threading.Thread(target=run_gui)
 gui_thread.start()
 
 # GUI 쓰레드가 종료될 때까지 기다림
-gui_thread.join()
 ##################################################
 # 웹소켓 서버에 연결하고 메인 함수 실행
 # root = tk.Tk()  # 루트 윈도우 생성
@@ -258,4 +257,7 @@ print('서버에 연결되었습니다.')
 
 video_rev_thread = threading.Thread(target=video_rev_frames, args=(video_client_socket, ))
 video_rev_thread.start()
+
+video_rev_thread.join()
+gui_thread.join()
 
