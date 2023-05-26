@@ -263,7 +263,6 @@ root = tk.Tk()
 chat_server = ChatServer(loop)
 root.protocol("WM_DELETE_WINDOW", root.quit)
 root.after(50, run_tk)  # 0.05초마다 업데이트
-root.mainloop()
 root_thread = threading.Thread(target=root.mainloop)
 root_thread.start()
 # GUI가 종료되면 서버 쓰레드를 종료하고 이벤트 루프를 정리
