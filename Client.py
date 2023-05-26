@@ -14,7 +14,7 @@ def video_send_frames(video_client_socket):
                 a = pickle.dumps(frame)
                 message = struct.pack("Q",len(a))+a
                 video_client_socket.sendall(message)
-                cv2.imshow("Client_Client",frame)
+                #cv2.imshow("Client_Client",frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     video_client_socket.close()
                     cv2.destroyAllWindows()
