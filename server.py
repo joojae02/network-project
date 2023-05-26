@@ -13,13 +13,15 @@ def video_send_frames(video_client_socket):
                 img,frame = vid.read()
                 a = pickle.dumps(frame)
                 message = struct.pack("Q",len(a))+a
-                video_client_socket.sendall(message)
+                video_client_socket.se  ndall(message)
                 #cv2.imshow("Server_Client",frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     video_client_socket.close()
                     cv2.destroyAllWindows()
                     break
-def video_rev_frames(video_client_socket):
+        vid.release()
+
+def video_rev_frames(video_client_socket, frame_queue):
     data = b""
     payload_size = struct.calcsize("Q")
     while True :
@@ -35,13 +37,20 @@ def video_rev_frames(video_client_socket):
         frame_data = data[:msg_size]
         data  = data[msg_size:]
         frame = pickle.loads(frame_data)
-        cv2.imshow("Server_Server",frame)
+        frame_queue.put(frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             video_client_socket.close()
             cv2.destroyAllWindows()
             break
 
-
+def update_gui(frame_queue):
+    while True:
+        if not frame_queue.empty():
+            frame = frame_queue.get()
+            cv2.imshow("Server_Server", frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            cv2.destroyAllWindows()
+            break
 
 video_server_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 video_host_name  = socket.gethostname()
@@ -56,6 +65,7 @@ video_server_socket.bind(socket_address)
 print('Socket bind complete')
 video_server_socket.listen(5)
 print('Socket now listening')
+frame_queue = queue.Queue()
 
 
 try:
@@ -63,8 +73,10 @@ try:
     print('Connection from:',video_addr)
     video_send_thread = threading.Thread(target=video_send_frames, args=(video_client_socket,))
     video_send_thread.start()
-    video_rev_thread = threading.Thread(target=video_rev_frames, args=(video_client_socket,))
+    video_rev_thread = threading.Thread(target=video_rev_frames, args=(video_client_socket, frame_queue, ))
     video_rev_thread.start()
+    update_gui_thread = threading.Thread(target=update_gui, args=(frame_queue,))
+    update_gui_thread.start()
     
 except KeyboardInterrupt:
     print("서버 종료")
